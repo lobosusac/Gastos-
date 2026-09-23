@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Control de Gastos</title>
+<link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+<header>
+  <h1>Control de Gastos</h1>
+  <span id="conexion" class="conexion off" title="Estado de la conexión en tiempo real">● Desconectado</span>
+</header>
+
+<main>
+  <section class="tarjetas">
+    <div class="tarjeta"><span>Total en gastos</span><strong id="r-total">—</strong></div>
+    <div class="tarjeta ok"><span>Abonado</span><strong id="r-pagado">—</strong></div>
+    <div class="tarjeta pend"><span>Saldo pendiente</span><strong id="r-saldo">—</strong></div>
+    <div class="tarjeta"><span>Gastos pendientes</span><strong id="r-pendientes">—</strong><small id="r-vencidos"></small></div>
+  </section>
+  <div class="progreso grande"><div id="r-barra"></div></div>
+  <p class="porcentaje" id="r-porcentaje"></p>
+
+  <section class="panel">
+    <h2 id="form-titulo">Nuevo gasto</h2>
+    <form id="form-gasto" autocomplete="off">
+      <input type="hidden" name="gasto_id">
+      <label>Descripción<input name="descripcion" required maxlength="200" placeholder="Ej. Tarjeta de crédito, préstamo, colegiatura…"></label>
+      <label>Categoría<input name="categoria" list="categorias" maxlength="60" placeholder="General"></label>
+      <label>Monto total<input name="monto" type="number" step="0.01" min="0.01" required></label>
+      <label>Fecha<input name="fecha" type="date"></label>
+      <label>Vence<input name="fecha_vencimiento" type="date"></label>
+      <label class="ancho">Notas<input name="notas" maxlength="1000"></label>
+      <div class="acciones">
+        <button type="submit" class="primario" id="btn-guardar">Agregar gasto</button>
+        <button type="button" id="btn-cancelar" hidden>Cancelar</button>
+      </div>
+    </form>
+    <datalist id="categorias"></datalist>
+  </section>
+
+  <section class="panel">
+    <div class="barra-filtros">
+      <h2>Gastos</h2>
+      <input id="buscar" type="search" placeholder="Buscar…">
+      <select id="filtro-estado">
+        <option value="">Todos</option>
+        <option value="activos">Con saldo</option>
+        <option value="pendiente">Sin abonos</option>
+        <option value="parcial">Parciales</option>
+        <option value="pagado">Pagados</option>
+        <option value="vencido">Vencidos</option>
+      </select>
+      <select id="filtro-categoria"><option value="">Todas las categorías</option></select>
+    </div>
+    <div class="tabla-wrap">
+      <table>
+        <thead>
+          <tr><th>Gasto</th><th>Total</th><th>Abonado</th><th>Saldo</th><th>Progreso</th><th>Estado</th><th></th></tr>
+        </thead>
+        <tbody id="lista"></tbody>
+      </table>
+    </div>
+    <p id="vacio" class="vacio" hidden>No hay gastos que mostrar.</p>
+  </section>
+
+  <section class="panel" id="panel-categorias" hidden>
+    <h2>Por categoría</h2>
+    <div id="categorias-resumen"></div>
+  </section>
+</main>
+
+<dialog id="dlg-pago">
+  <form id="form-pago" method="dialog">
+    <h3>Registrar abono</h3>
+    <p id="pago-info"></p>
+    <label>Monto del abono<input name="monto" type="number" step="0.01" min="0.01" required></label>
+    <button type="button" class="enlace" id="btn-saldo-total">Pagar saldo completo</button>
+    <label>Fecha<input name="fecha" type="date" required></label>
+    <label>Nota<input name="nota" maxlength="300" placeholder="Opcional (ej. transferencia, efectivo)"></label>
+    <p class="error" id="pago-error"></p>
+    <div class="acciones">
+      <button type="submit" class="primario" value="ok">Guardar abono</button>
+      <button type="button" id="btn-cerrar-pago">Cancelar</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="aviso" class="aviso" hidden></div>
+
+<script src="app.js"></script>
+</body>
+</html>
