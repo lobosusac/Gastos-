@@ -2,6 +2,16 @@
 
 Programa para registrar gastos/deudas, ir **abonando pagos** y ver el saldo **actualizado en tiempo real**.
 
+## Versión en línea (PC y celular, desde cualquier lugar)
+
+**https://claude.ai/artifact/Uvs7DrjT3WDkWyuVWgfUdo**
+
+Ábrela con tu cuenta de claude.ai en el navegador de la PC o en la app de Claude del celular.
+Los datos se guardan en la base de datos de la página y se sincronizan al instante entre dispositivos.
+Es privada: solo tú puedes abrirla. El código está en `nube/index.html`.
+
+## Versión local (servidor propio con SQLite)
+
 - Base de datos **SQLite** (`gastos.db`, se crea sola la primera vez).
 - Interfaz web: se abre en el navegador (computadora o celular).
 - **Tiempo real**: si tienes la página abierta en varias pestañas o dispositivos, todas se actualizan solas al agregar un gasto o abono.

@@ -1,0 +1,592 @@
+<title>Mis Gastos y Abonos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root {
+  --fondo: #f1f4f2;
+  --panel: #ffffff;
+  --panel-2: #f7f9f8;
+  --tinta: #17211d;
+  --suave: #5c6962;
+  --linea: #dde4e0;
+  --acento: #0e6655;
+  --acento-tinta: #ffffff;
+  --ok: #1d8049;
+  --parcial: #a86b0c;
+  --mal: #bf3a33;
+  --barra: #e3e9e6;
+  --sombra: 0 10px 40px rgba(15, 35, 28, .18);
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --fondo: #0f1412; --panel: #171e1b; --panel-2: #1c2521; --tinta: #e3ebe7; --suave: #93a19a;
+    --linea: #2a3530; --acento: #4cc2a6; --acento-tinta: #06231c; --ok: #4fc585; --parcial: #e5a93f;
+    --mal: #f07a72; --barra: #26302c; --sombra: 0 10px 40px rgba(0, 0, 0, .55);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --fondo: #0f1412; --panel: #171e1b; --panel-2: #1c2521; --tinta: #e3ebe7; --suave: #93a19a;
+  --linea: #2a3530; --acento: #4cc2a6; --acento-tinta: #06231c; --ok: #4fc585; --parcial: #e5a93f;
+  --mal: #f07a72; --barra: #26302c; --sombra: 0 10px 40px rgba(0, 0, 0, .55);
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--fondo); color: var(--tinta); font-family: var(--sans); font-size: 15px; line-height: 1.45;
+}
+.envoltura { max-width: 760px; margin: 0 auto; padding: 16px 16px 96px; display: flex; flex-direction: column; gap: 16px; }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+
+/* Encabezado */
+.cabecera { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 4px; }
+.cabecera h1 { margin: 0; font-size: 1.25rem; font-weight: 700; letter-spacing: -.01em; }
+.vivo { font-size: .78rem; color: var(--suave); display: inline-flex; align-items: center; gap: 6px; }
+.vivo::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--suave); }
+.vivo.on::before { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent); }
+
+/* Resumen */
+.resumen { background: var(--acento); color: var(--acento-tinta); border-radius: 14px; padding: 18px 18px 16px; display: flex; flex-direction: column; gap: 14px; }
+.resumen .etq { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; opacity: .8; }
+.saldo-grande { font-size: clamp(1.9rem, 7vw, 2.5rem); font-weight: 600; line-height: 1.1; }
+.resumen-fila { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.resumen-fila > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.resumen-fila .num { font-size: .95rem; overflow-wrap: anywhere; }
+.barra-total { height: 8px; border-radius: 99px; background: color-mix(in srgb, var(--acento-tinta) 22%, transparent); overflow: hidden; }
+.barra-total > div { height: 100%; background: var(--acento-tinta); width: 0; transition: width .5s ease; }
+.pct { font-size: .8rem; opacity: .85; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+
+/* Controles */
+.controles { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.buscar { flex: 1 1 180px; min-width: 0; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { border: 1px solid var(--linea); background: var(--panel); color: var(--suave); border-radius: 99px; padding: 6px 12px; font: inherit; font-size: .85rem; cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--tinta); color: var(--fondo); border-color: var(--tinta); }
+
+input, select, textarea {
+  font: inherit; color: var(--tinta); background: var(--panel); border: 1px solid var(--linea);
+  border-radius: 10px; padding: 10px 12px; width: 100%;
+}
+input:focus-visible, select:focus-visible, button:focus-visible, .gasto:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+
+button { font: inherit; cursor: pointer; }
+.btn { border: 1px solid var(--linea); background: var(--panel); color: var(--tinta); border-radius: 10px; padding: 9px 14px; font-weight: 500; }
+.btn.primario { background: var(--acento); border-color: var(--acento); color: var(--acento-tinta); font-weight: 600; }
+.btn.peligro { color: var(--mal); }
+.btn.chico { padding: 6px 11px; font-size: .85rem; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn-texto { border: 0; background: none; color: var(--acento); padding: 0; font-size: .85rem; font-weight: 600; }
+
+.fab {
+  position: fixed; right: 16px; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 5;
+  border: 0; border-radius: 99px; padding: 14px 20px; background: var(--acento); color: var(--acento-tinta);
+  font-weight: 700; box-shadow: var(--sombra);
+}
+
+/* Lista de gastos */
+.lista { display: flex; flex-direction: column; gap: 10px; }
+.gasto { background: var(--panel); border: 1px solid var(--linea); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px; cursor: pointer; }
+.gasto.destello { animation: destello 1.4s ease; }
+@keyframes destello { from { box-shadow: 0 0 0 3px color-mix(in srgb, var(--acento) 45%, transparent); } to { box-shadow: 0 0 0 0 transparent; } }
+.gasto-top { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+.gasto-top h3 { margin: 0; font-size: 1rem; font-weight: 600; overflow-wrap: anywhere; }
+.meta { font-size: .8rem; color: var(--suave); margin-top: 2px; }
+.meta .vencido { color: var(--mal); font-weight: 600; }
+.saldo { text-align: right; flex-shrink: 0; }
+.saldo .num { font-size: 1.1rem; font-weight: 600; display: block; }
+.saldo small { font-size: .72rem; color: var(--suave); text-transform: uppercase; letter-spacing: .06em; }
+.barra { height: 6px; border-radius: 99px; background: var(--barra); overflow: hidden; }
+.barra > div { height: 100%; background: var(--ok); transition: width .5s ease; }
+.gasto-pie { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; font-size: .85rem; color: var(--suave); }
+.estado { font-size: .72rem; font-weight: 700; padding: 3px 9px; border-radius: 99px; text-transform: uppercase; letter-spacing: .05em; }
+.estado.pendiente { color: var(--mal); background: color-mix(in srgb, var(--mal) 13%, transparent); }
+.estado.parcial { color: var(--parcial); background: color-mix(in srgb, var(--parcial) 15%, transparent); }
+.estado.pagado { color: var(--ok); background: color-mix(in srgb, var(--ok) 15%, transparent); }
+.pie-der { display: flex; gap: 8px; align-items: center; }
+
+.detalle { border-top: 1px dashed var(--linea); padding-top: 10px; display: flex; flex-direction: column; gap: 10px; cursor: default; }
+.detalle .notas { font-size: .88rem; color: var(--suave); margin: 0; overflow-wrap: anywhere; }
+.historial { display: flex; flex-direction: column; }
+.pago { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--linea); font-size: .88rem; }
+.pago:last-child { border-bottom: 0; }
+.pago-info { display: flex; flex-direction: column; min-width: 0; }
+.pago .fecha { color: var(--tinta); white-space: nowrap; }
+.pago .nota { color: var(--suave); font-size: .82rem; overflow-wrap: break-word; }
+.pago-der { display: flex; align-items: center; gap: 8px; }
+.x { border: 0; background: none; color: var(--suave); font-size: 1rem; padding: 2px 6px; border-radius: 6px; }
+.x:hover { color: var(--mal); }
+.detalle-acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+.sin-abonos { font-size: .88rem; color: var(--suave); margin: 0; }
+
+.vacio { text-align: center; color: var(--suave); padding: 36px 16px; background: var(--panel); border: 1px dashed var(--linea); border-radius: 12px; }
+.vacio strong { display: block; color: var(--tinta); font-size: 1.05rem; margin-bottom: 4px; }
+.aviso-db { background: color-mix(in srgb, var(--mal) 12%, var(--panel)); border: 1px solid color-mix(in srgb, var(--mal) 35%, transparent); border-radius: 12px; padding: 14px; font-size: .9rem; }
+
+.categorias { display: flex; flex-direction: column; gap: 10px; }
+.categorias h2 { margin: 0; font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--suave); font-weight: 600; }
+.cat { display: grid; grid-template-columns: minmax(80px, 140px) 1fr auto; gap: 12px; align-items: center; font-size: .88rem; }
+.cat span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pie-pagina { display: flex; justify-content: center; }
+
+/* Hojas (formularios) */
+dialog {
+  border: 0; padding: 0; background: var(--panel); color: var(--tinta);
+  width: min(460px, 100%); max-width: 100%; border-radius: 16px; box-shadow: var(--sombra);
+}
+dialog::backdrop { background: rgba(8, 16, 13, .45); }
+@media (max-width: 560px) {
+  dialog { margin: auto 0 0; border-radius: 18px 18px 0 0; width: 100%; max-height: 92%; }
+}
+.hoja { padding: 20px 18px calc(18px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 12px; }
+.hoja h2 { margin: 0; font-size: 1.1rem; }
+.hoja .sub { margin: -6px 0 0; color: var(--suave); font-size: .88rem; }
+.campo { display: flex; flex-direction: column; gap: 5px; font-size: .82rem; color: var(--suave); font-weight: 500; }
+.dos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.error { color: var(--mal); font-size: .85rem; margin: 0; min-height: 1.2em; }
+.hoja-acciones { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.hoja-acciones .btn { flex: 1 1 120px; }
+
+.toast {
+  position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  background: var(--tinta); color: var(--fondo); padding: 10px 16px; border-radius: 10px; font-size: .88rem; z-index: 10; box-shadow: var(--sombra);
+  max-width: calc(100% - 32px);
+}
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="envoltura">
+  <header class="cabecera">
+    <h1>Mis Gastos y Abonos</h1>
+    <span class="vivo" id="vivo">Conectando…</span>
+  </header>
+
+  <section class="resumen" aria-label="Resumen">
+    <div>
+      <div class="etq">Saldo pendiente</div>
+      <div class="saldo-grande num" id="r-saldo">Q 0.00</div>
+    </div>
+    <div class="barra-total"><div id="r-barra"></div></div>
+    <div class="pct"><span id="r-pct">Sin gastos registrados</span><span id="r-vencidos"></span></div>
+    <div class="resumen-fila">
+      <div><span class="etq">Total</span><span class="num" id="r-total">Q 0.00</span></div>
+      <div><span class="etq">Abonado</span><span class="num" id="r-pagado">Q 0.00</span></div>
+      <div><span class="etq">Pendientes</span><span class="num" id="r-cuenta">0</span></div>
+    </div>
+  </section>
+
+  <div id="aviso-db" class="aviso-db" hidden></div>
+
+  <div class="controles">
+    <input id="buscar" class="buscar" type="search" placeholder="Buscar gasto o categoría…" aria-label="Buscar">
+    <div class="chips" role="group" aria-label="Filtrar">
+      <button class="chip" data-filtro="activos" aria-pressed="true">Con saldo</button>
+      <button class="chip" data-filtro="vencidos" aria-pressed="false">Vencidos</button>
+      <button class="chip" data-filtro="pagados" aria-pressed="false">Pagados</button>
+      <button class="chip" data-filtro="todos" aria-pressed="false">Todos</button>
+    </div>
+  </div>
+
+  <div class="lista" id="lista"></div>
+  <div class="vacio" id="vacio" hidden></div>
+
+  <section class="categorias" id="categorias" hidden>
+    <h2>Saldo por categoría</h2>
+    <div id="cat-lista" class="categorias"></div>
+  </section>
+
+  <div class="pie-pagina"><button class="btn chico" id="btn-exportar" hidden>Descargar respaldo (CSV)</button></div>
+</div>
+
+<button class="fab" id="btn-nuevo">+ Nuevo gasto</button>
+
+<dialog id="dlg-gasto">
+  <form class="hoja" id="form-gasto" novalidate>
+    <h2 id="gasto-titulo">Nuevo gasto</h2>
+    <label class="campo" for="g-desc">Descripción
+      <input id="g-desc" name="descripcion" maxlength="200" placeholder="Ej. Tarjeta de crédito, préstamo, colegiatura" required>
+    </label>
+    <div class="dos">
+      <label class="campo" for="g-monto">Monto total (Q)
+        <input id="g-monto" name="monto" inputmode="decimal" placeholder="0.00" required>
+      </label>
+      <label class="campo" for="g-cat">Categoría
+        <input id="g-cat" name="categoria" list="lista-cats" maxlength="60" placeholder="General">
+      </label>
+    </div>
+    <div class="dos">
+      <label class="campo" for="g-fecha">Fecha
+        <input id="g-fecha" name="fecha" type="date">
+      </label>
+      <label class="campo" for="g-vence">Vence (opcional)
+        <input id="g-vence" name="vence" type="date">
+      </label>
+    </div>
+    <label class="campo" for="g-notas">Notas
+      <input id="g-notas" name="notas" maxlength="1000">
+    </label>
+    <p class="error" id="gasto-error"></p>
+    <div class="hoja-acciones">
+      <button type="button" class="btn" data-cerrar>Cancelar</button>
+      <button type="submit" class="btn primario" id="gasto-guardar">Agregar gasto</button>
+    </div>
+  </form>
+  <datalist id="lista-cats"></datalist>
+</dialog>
+
+<dialog id="dlg-pago">
+  <form class="hoja" id="form-pago" novalidate>
+    <h2>Registrar abono</h2>
+    <p class="sub" id="pago-sub"></p>
+    <label class="campo" for="p-monto">Monto del abono (Q)
+      <input id="p-monto" name="monto" inputmode="decimal" placeholder="0.00" required>
+    </label>
+    <button type="button" class="btn-texto" id="p-completo">Pagar el saldo completo</button>
+    <div class="dos">
+      <label class="campo" for="p-fecha">Fecha
+        <input id="p-fecha" name="fecha" type="date">
+      </label>
+      <label class="campo" for="p-nota">Nota
+        <input id="p-nota" name="nota" maxlength="300" placeholder="Efectivo, transferencia…">
+      </label>
+    </div>
+    <p class="error" id="pago-error"></p>
+    <div class="hoja-acciones">
+      <button type="button" class="btn" data-cerrar>Cancelar</button>
+      <button type="submit" class="btn primario" id="pago-guardar">Guardar abono</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-confirmar">
+  <div class="hoja">
+    <h2 id="conf-titulo">¿Eliminar?</h2>
+    <p class="sub" id="conf-texto"></p>
+    <div class="hoja-acciones">
+      <button type="button" class="btn" data-cerrar>Cancelar</button>
+      <button type="button" class="btn primario" id="conf-ok" style="background:var(--mal);border-color:var(--mal);color:#fff">Eliminar</button>
+    </div>
+  </div>
+</dialog>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+"use strict";
+const MONEDA = "Q";
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmt = (cent) => MONEDA + " " + (cent / 100).toLocaleString("es-GT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const hoy = () => new Date().toLocaleDateString("en-CA");
+const fechaCorta = (f) => f ? new Date(f + "T00:00:00").toLocaleDateString("es-GT", { day: "numeric", month: "short", year: "numeric" }) : "";
+const usar = (n) => (window.claude && window.claude.use) ? window.claude.use(n) : Promise.resolve(null);
+const nuevoId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+function aCentavos(v) {
+  const t = String(v ?? "").trim().replace(/,/g, "").replace(/^Q\s*/i, "");
+  if (!/^\d+(\.\d{1,2})?$/.test(t)) return null;
+  const [e, d = ""] = t.split(".");
+  const c = parseInt(e, 10) * 100 + parseInt((d + "00").slice(0, 2), 10);
+  return c > 0 ? c : null;
+}
+
+let db = null;
+let gastosCol = null;
+let gastos = [];            // [{id, ...datos, pagadoCent, saldoCent, estado, vencido}]
+let firmas = new Map();
+let filtro = "activos";
+const abiertos = new Set();
+let listo = false;
+
+// ---------- Estado derivado ----------
+function derivar(id, d) {
+  const pagos = Array.isArray(d.pagos) ? d.pagos : [];
+  const pagadoCent = pagos.reduce((s, p) => s + (p.montoCent || 0), 0);
+  const saldoCent = Math.max(0, d.montoCent - pagadoCent);
+  const estado = pagadoCent <= 0 ? "pendiente" : saldoCent <= 0 ? "pagado" : "parcial";
+  const vencido = !!(d.vence && saldoCent > 0 && d.vence < hoy());
+  return { id, ...d, pagos, pagadoCent, saldoCent, estado, vencido };
+}
+
+// ---------- Render ----------
+function render() {
+  const total = gastos.reduce((s, g) => s + g.montoCent, 0);
+  const pagado = gastos.reduce((s, g) => s + Math.min(g.pagadoCent, g.montoCent), 0);
+  const pend = gastos.filter((g) => g.estado !== "pagado").length;
+  const venc = gastos.filter((g) => g.vencido).length;
+  $("#r-saldo").textContent = fmt(total - pagado);
+  $("#r-total").textContent = fmt(total);
+  $("#r-pagado").textContent = fmt(pagado);
+  $("#r-cuenta").textContent = `${pend} de ${gastos.length}`;
+  const pct = total ? (pagado / total) * 100 : 0;
+  $("#r-barra").style.width = pct + "%";
+  $("#r-pct").textContent = total ? `${pct.toFixed(1)} % pagado` : "Sin gastos registrados";
+  $("#r-vencidos").textContent = venc ? `${venc} vencido${venc > 1 ? "s" : ""}` : "";
+
+  // categorías
+  const cats = new Map();
+  for (const g of gastos) {
+    const c = cats.get(g.categoria) || { total: 0, pagado: 0 };
+    c.total += g.montoCent; c.pagado += Math.min(g.pagadoCent, g.montoCent);
+    cats.set(g.categoria, c);
+  }
+  const nombres = [...cats.keys()].sort((a, b) => a.localeCompare(b, "es"));
+  $("#lista-cats").innerHTML = nombres.map((c) => `<option value="${esc(c)}">`).join("");
+  $("#categorias").hidden = nombres.length < 2;
+  $("#cat-lista").innerHTML = nombres.map((n) => {
+    const c = cats.get(n); const p = c.total ? (c.pagado / c.total) * 100 : 0;
+    return `<div class="cat"><span title="${esc(n)}">${esc(n)}</span><div class="barra"><div style="width:${p}%"></div></div><span class="num">${fmt(c.total - c.pagado)}</span></div>`;
+  }).join("");
+
+  // lista
+  const q = $("#buscar").value.trim().toLowerCase();
+  const visibles = gastos.filter((g) => {
+    if (filtro === "activos" && g.estado === "pagado") return false;
+    if (filtro === "pagados" && g.estado !== "pagado") return false;
+    if (filtro === "vencidos" && !g.vencido) return false;
+    return !q || `${g.descripcion} ${g.categoria} ${g.notas || ""}`.toLowerCase().includes(q);
+  }).sort((a, b) => (b.vencido - a.vencido) || (a.estado === "pagado") - (b.estado === "pagado") ||
+                    (a.vence || "9999").localeCompare(b.vence || "9999") || (b.fecha || "").localeCompare(a.fecha || ""));
+
+  const nuevas = new Map();
+  $("#lista").innerHTML = visibles.map((g) => {
+    const firma = `${g.montoCent}|${g.pagadoCent}|${g.descripcion}`;
+    nuevas.set(g.id, firma);
+    const cambio = firmas.size && firmas.has(g.id) && firmas.get(g.id) !== firma;
+    const meta = [esc(g.categoria)];
+    if (g.vence) meta.push(g.vencido ? `<span class="vencido">venció ${fechaCorta(g.vence)}</span>` : `vence ${fechaCorta(g.vence)}`);
+    else meta.push(fechaCorta(g.fecha));
+    const pct = g.montoCent ? Math.min(100, (g.pagadoCent / g.montoCent) * 100) : 0;
+    const abierto = abiertos.has(g.id);
+    let detalle = "";
+    if (abierto) {
+      const pagos = [...g.pagos].sort((a, b) => (b.fecha || "").localeCompare(a.fecha || ""));
+      detalle = `<div class="detalle" data-detalle>
+        ${g.notas ? `<p class="notas">${esc(g.notas)}</p>` : ""}
+        ${pagos.length ? `<div class="historial">${pagos.map((p) => `
+          <div class="pago"><span class="pago-info"><span class="fecha">${fechaCorta(p.fecha)}</span>${p.nota ? `<span class="nota">${esc(p.nota)}</span>` : ""}</span>
+          <span class="pago-der"><span class="num">${fmt(p.montoCent)}</span>
+          <button class="x" data-accion="borrar-pago" data-pago="${esc(p.id)}" aria-label="Eliminar abono de ${fmt(p.montoCent)}">✕</button></span></div>`).join("")}</div>`
+          : `<p class="sin-abonos">Todavía no hay abonos. Registrado el ${fechaCorta(g.fecha)}.</p>`}
+        <div class="detalle-acciones">
+          <button class="btn chico" data-accion="editar">Editar</button>
+          <button class="btn chico peligro" data-accion="borrar">Eliminar gasto</button>
+        </div></div>`;
+    }
+    return `<article class="gasto${cambio ? " destello" : ""}" data-id="${esc(g.id)}" tabindex="0" aria-expanded="${abierto}">
+      <div class="gasto-top">
+        <div><h3>${esc(g.descripcion)}</h3><div class="meta">${meta.join(" · ")}</div></div>
+        <div class="saldo"><small>${g.estado === "pagado" ? "Pagado" : "Debes"}</small><span class="num">${fmt(g.estado === "pagado" ? g.montoCent : g.saldoCent)}</span></div>
+      </div>
+      <div class="barra"><div style="width:${pct}%"></div></div>
+      <div class="gasto-pie">
+        <span>Abonado <span class="num">${fmt(g.pagadoCent)}</span> de <span class="num">${fmt(g.montoCent)}</span></span>
+        <span class="pie-der"><span class="estado ${g.estado}">${g.estado}</span>
+        ${g.saldoCent > 0 ? `<button class="btn chico primario" data-accion="abonar">Abonar</button>` : ""}</span>
+      </div>${detalle}</article>`;
+  }).join("");
+  firmas = nuevas;
+
+  const vacio = $("#vacio");
+  if (!listo) { vacio.hidden = true; }
+  else if (!gastos.length) {
+    vacio.innerHTML = `<strong>Aún no tienes gastos</strong>Toca “+ Nuevo gasto” para registrar el primero; luego ve anotando cada abono.`;
+    vacio.hidden = false;
+  } else if (!visibles.length) {
+    vacio.innerHTML = filtro === "activos" && !q ? `<strong>¡Todo pagado!</strong>No tienes saldos pendientes.` : `<strong>Sin resultados</strong>Ningún gasto coincide con este filtro.`;
+    vacio.hidden = false;
+  } else vacio.hidden = true;
+}
+
+// ---------- Utilidades de UI ----------
+function toast(t) {
+  const el = $("#toast"); el.textContent = t; el.hidden = false;
+  clearTimeout(toast.t); toast.t = setTimeout(() => (el.hidden = true), 2600);
+}
+document.querySelectorAll("dialog").forEach((d) => {
+  d.addEventListener("click", (e) => { if (e.target === d || e.target.closest("[data-cerrar]")) d.close(); });
+});
+function errorDb(e) {
+  if (e?.code === "quota_exceeded") return "Se llenó el espacio de la base de datos. Elimina gastos antiguos ya pagados.";
+  if (e?.code === "invalid_argument") return "No tienes permiso para modificar estos datos.";
+  return "No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.";
+}
+async function guardar(fn, btn) {
+  if (btn) btn.disabled = true;
+  try { return await fn(); }
+  catch (e) {
+    if (e?.code === "unavailable") { await new Promise((r) => setTimeout(r, 600 + Math.random() * 600)); return await fn(); }
+    throw e;
+  } finally { if (btn) btn.disabled = false; }
+}
+
+// ---------- Gasto: crear / editar ----------
+let editando = null;
+function abrirGasto(g) {
+  editando = g || null;
+  const f = $("#form-gasto"); f.reset();
+  $("#gasto-titulo").textContent = g ? "Editar gasto" : "Nuevo gasto";
+  $("#gasto-guardar").textContent = g ? "Guardar cambios" : "Agregar gasto";
+  $("#g-desc").value = g?.descripcion || "";
+  $("#g-monto").value = g ? (g.montoCent / 100).toFixed(2) : "";
+  $("#g-cat").value = g?.categoria || "";
+  $("#g-fecha").value = g?.fecha || hoy();
+  $("#g-vence").value = g?.vence || "";
+  $("#g-notas").value = g?.notas || "";
+  $("#gasto-error").textContent = "";
+  $("#dlg-gasto").showModal();
+  if (!g) $("#g-desc").focus();
+}
+$("#btn-nuevo").addEventListener("click", () => abrirGasto());
+$("#form-gasto").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const err = $("#gasto-error");
+  if (!gastosCol) return (err.textContent = "La base de datos no está disponible en esta vista.");
+  const descripcion = $("#g-desc").value.trim();
+  const montoCent = aCentavos($("#g-monto").value);
+  if (!descripcion) return (err.textContent = "Escribe una descripción.");
+  if (!montoCent) return (err.textContent = "El monto debe ser un número mayor que cero, con hasta 2 decimales.");
+  if (editando && montoCent < editando.pagadoCent) return (err.textContent = `El total no puede ser menor a lo ya abonado (${fmt(editando.pagadoCent)}).`);
+  const datos = {
+    descripcion, montoCent,
+    categoria: $("#g-cat").value.trim() || "General",
+    fecha: $("#g-fecha").value || hoy(),
+    vence: $("#g-vence").value || null,
+    notas: $("#g-notas").value.trim(),
+  };
+  try {
+    if (editando) {
+      await guardar(() => gastosCol.doc(editando.id).update(datos), $("#gasto-guardar"));
+      toast("Gasto actualizado");
+    } else {
+      const id = nuevoId();
+      await guardar(() => gastosCol.doc(id).set({ ...datos, pagos: [], creado: new Date().toISOString() }), $("#gasto-guardar"));
+      toast("Gasto agregado");
+    }
+    $("#dlg-gasto").close();
+  } catch (x) { err.textContent = errorDb(x); }
+});
+
+// ---------- Abonos ----------
+let gastoPago = null;
+function abrirPago(g) {
+  gastoPago = g;
+  $("#form-pago").reset();
+  $("#pago-sub").innerHTML = `${esc(g.descripcion)} · saldo <span class="num">${fmt(g.saldoCent)}</span>`;
+  $("#p-fecha").value = hoy();
+  $("#pago-error").textContent = "";
+  $("#dlg-pago").showModal();
+  $("#p-monto").focus();
+}
+$("#p-completo").addEventListener("click", () => { if (gastoPago) $("#p-monto").value = (gastoPago.saldoCent / 100).toFixed(2); });
+$("#form-pago").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const err = $("#pago-error");
+  const actual = gastos.find((g) => g.id === gastoPago?.id);
+  if (!actual) return (err.textContent = "Este gasto ya no existe.");
+  const montoCent = aCentavos($("#p-monto").value);
+  if (!montoCent) return (err.textContent = "El abono debe ser un número mayor que cero, con hasta 2 decimales.");
+  if (montoCent > actual.saldoCent) return (err.textContent = `El abono supera el saldo pendiente (${fmt(actual.saldoCent)}).`);
+  const pago = { id: nuevoId(), montoCent, fecha: $("#p-fecha").value || hoy(), nota: $("#p-nota").value.trim() };
+  try {
+    await guardar(() => gastosCol.doc(actual.id).update({ pagos: [...actual.pagos, pago] }), $("#pago-guardar"));
+    $("#dlg-pago").close();
+    toast(montoCent === actual.saldoCent ? "¡Gasto pagado por completo!" : `Abono de ${fmt(montoCent)} registrado`);
+  } catch (x) { err.textContent = errorDb(x); }
+});
+
+// ---------- Confirmación ----------
+let accionConfirmada = null;
+function confirmar(titulo, texto, fn) {
+  $("#conf-titulo").textContent = titulo; $("#conf-texto").textContent = texto;
+  accionConfirmada = fn; $("#dlg-confirmar").showModal();
+}
+$("#conf-ok").addEventListener("click", async () => {
+  const fn = accionConfirmada; accionConfirmada = null; $("#dlg-confirmar").close();
+  if (fn) { try { await fn(); } catch (x) { toast(errorDb(x)); } }
+});
+
+// ---------- Clics en la lista ----------
+$("#lista").addEventListener("click", (e) => {
+  const tarjeta = e.target.closest(".gasto"); if (!tarjeta) return;
+  const g = gastos.find((x) => x.id === tarjeta.dataset.id); if (!g) return;
+  const btn = e.target.closest("[data-accion]");
+  if (!btn) {
+    if (e.target.closest("[data-detalle]")) return;
+    abiertos.has(g.id) ? abiertos.delete(g.id) : abiertos.add(g.id);
+    return render();
+  }
+  const accion = btn.dataset.accion;
+  if (accion === "abonar") abrirPago(g);
+  else if (accion === "editar") abrirGasto(g);
+  else if (accion === "borrar") confirmar("¿Eliminar este gasto?", `“${g.descripcion}” y sus ${g.pagos.length} abono(s) se borrarán para siempre.`, async () => {
+    await guardar(() => gastosCol.doc(g.id).delete()); abiertos.delete(g.id); toast("Gasto eliminado");
+  });
+  else if (accion === "borrar-pago") {
+    const p = g.pagos.find((x) => x.id === btn.dataset.pago); if (!p) return;
+    confirmar("¿Eliminar este abono?", `Abono de ${fmt(p.montoCent)} del ${fechaCorta(p.fecha)} en “${g.descripcion}”.`, async () => {
+      const actual = gastos.find((x) => x.id === g.id);
+      await guardar(() => gastosCol.doc(g.id).update({ pagos: actual.pagos.filter((x) => x.id !== p.id) }));
+      toast("Abono eliminado");
+    });
+  }
+});
+$("#lista").addEventListener("keydown", (e) => {
+  if ((e.key === "Enter" || e.key === " ") && e.target.classList.contains("gasto")) { e.preventDefault(); e.target.click(); }
+});
+
+// ---------- Filtros ----------
+document.querySelectorAll(".chip").forEach((c) => c.addEventListener("click", () => {
+  filtro = c.dataset.filtro;
+  document.querySelectorAll(".chip").forEach((x) => x.setAttribute("aria-pressed", String(x === c)));
+  render();
+}));
+$("#buscar").addEventListener("input", render);
+
+// ---------- Respaldo CSV ----------
+async function prepararExportar() {
+  const downloads = await usar("downloads");
+  if (!downloads) return;
+  const btn = $("#btn-exportar"); btn.hidden = false;
+  btn.addEventListener("click", async () => {
+    const q = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const filas = [["tipo", "gasto", "categoria", "fecha", "vence", "monto", "abonado", "saldo", "nota"]];
+    for (const g of gastos) {
+      filas.push(["gasto", g.descripcion, g.categoria, g.fecha, g.vence || "", (g.montoCent / 100).toFixed(2), (g.pagadoCent / 100).toFixed(2), (g.saldoCent / 100).toFixed(2), g.notas || ""]);
+      for (const p of g.pagos) filas.push(["abono", g.descripcion, g.categoria, p.fecha, "", (p.montoCent / 100).toFixed(2), "", "", p.nota || ""]);
+    }
+    const csv = "﻿" + filas.map((f) => f.map(q).join(",")).join("\r\n");
+    try { await downloads.save({ filename: `gastos-${hoy()}.csv`, data: csv }); } catch { toast("No se descargó el respaldo."); }
+  });
+}
+
+// ---------- Arranque ----------
+render();
+(async () => {
+  db = await usar("db");
+  const vivo = $("#vivo");
+  if (!db) {
+    vivo.textContent = "Sin conexión";
+    const a = $("#aviso-db");
+    a.textContent = "La base de datos no está disponible en esta vista. Abre esta página desde tu cuenta de claude.ai (en la computadora o en la app del celular) para ver y guardar tus gastos.";
+    a.hidden = false; $("#btn-nuevo").hidden = true;
+    return;
+  }
+  gastosCol = db.collection("gastos");
+  const suscribir = () => gastosCol.onSnapshot((snap) => {
+    gastos = snap.docs.filter((d) => d.exists).map((d) => derivar(d.id, d.data()));
+    listo = true;
+    vivo.textContent = snap.metadata.fromCache ? "Sincronizando…" : "En vivo";
+    vivo.classList.toggle("on", !snap.metadata.fromCache);
+    render();
+  }, (e) => {
+    vivo.textContent = "Sin conexión"; vivo.classList.remove("on");
+    if (e.code === "unavailable") setTimeout(suscribir, 3000);
+  });
+  suscribir();
+  prepararExportar();
+})();
+</script>
