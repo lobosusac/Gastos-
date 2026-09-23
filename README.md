@@ -2,7 +2,12 @@
 
 Programa para registrar gastos/deudas, ir **abonando pagos** y ver el saldo **actualizado en tiempo real**.
 
-## Versión en línea (PC y celular, desde cualquier lugar)
+## Tu propia dirección en Cloudflare (recomendado)
+
+Carpeta `cloudflare/`: página + servidor + base de datos D1, protegida con contraseña.
+Instrucciones paso a paso en [`cloudflare/LEEME.md`](cloudflare/LEEME.md).
+
+## Versión en línea en claude.ai
 
 **https://claude.ai/artifact/Uvs7DrjT3WDkWyuVWgfUdo**
 
